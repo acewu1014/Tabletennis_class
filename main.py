@@ -22,7 +22,7 @@ print("PyTorch Version: ",torch.__version__)
 print("Torchvision Version: ",torchvision.__version__)
 
 #dataset directory
-data_dir = "./data/hymenoptera_data"
+data_dir = ".\table_class" # C:\Users\Ace\Tabletennis\table_class
 
 # Models to choose from [resnet, mobilenet, VGG16]
 model_name = "resnet"
@@ -38,7 +38,7 @@ num_epochs = 15
 
 # Flag for feature extracting. When False, we finetune the whole model, 
 #   when True we only update the reshaped layer params
-feature_extract = True
+feature_extract = False
 
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
@@ -200,7 +200,7 @@ dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size
 
 # Detect if we have a GPU available
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+print(device)
 
 ######################################################################
 # Create the Optimizer
@@ -263,41 +263,16 @@ optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
 criterion = nn.CrossEntropyLoss()
 
 # Train and evaluate
-model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs)
 
 
-######################################################################
-# Comparison with Model Trained from Scratch
-# ------------------------------------------
-# 
-# Just for fun, lets see how the model learns if we do not use transfer
-# learning. The performance of finetuning vs. feature extracting depends
-# largely on the dataset but in general both transfer learning methods
-# produce favorable results in terms of training time and overall accuracy
-# versus a model trained from scratch.
-# 
-
-# Initialize the non-pretrained version of the model used for this run
-scratch_model,_ = initialize_model(model_name, num_classes, feature_extract=False, use_pretrained=False)
-scratch_model = scratch_model.to(device)
-scratch_optimizer = optim.SGD(scratch_model.parameters(), lr=0.001, momentum=0.9)
-scratch_criterion = nn.CrossEntropyLoss()
-_,scratch_hist = train_model(scratch_model, dataloaders_dict, scratch_criterion, scratch_optimizer, num_epochs=num_epochs, is_inception=(model_name=="inception"))
-
-# Plot the training curves of validation accuracy vs. number 
-#  of training epochs for the transfer learning method and
-#  the model trained from scratch
 ohist = []
-shist = []
 
 ohist = [h.cpu().numpy() for h in hist]
-shist = [h.cpu().numpy() for h in scratch_hist]
-
-plt.title("Validation Accuracy vs. Number of Training Epochs")
 plt.xlabel("Training Epochs")
-plt.ylabel("Validation Accuracy")
+
 plt.plot(range(1,num_epochs+1),ohist,label="Pretrained")
-plt.plot(range(1,num_epochs+1),shist,label="Scratch")
+
 plt.ylim((0,1.))
 plt.xticks(np.arange(1, num_epochs+1, 1.0))
 plt.legend()
